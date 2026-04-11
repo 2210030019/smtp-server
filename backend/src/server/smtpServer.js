@@ -3,6 +3,7 @@ import { config } from "../config/config.js";
 import { log } from "../utils/logger.js";
 import { createSession } from "../core/sessionManager.js";
 import { parseCommand } from "../core/commandParser.js";
+import { saveMail } from "../storage/mailStore.js";
 
 export const startServer = () => {
     const server = net.createServer((socket) => {
@@ -15,16 +16,30 @@ export const startServer = () => {
         socket.on('data', (data) => {
             command += data.toString();
             if (command.includes("\r\n") || command.includes("\n")) {
-                const fullCommand = command.trim()
-                command = ""
-                const response = parseCommand(fullCommand, session);
-                console.log(response);
-                socket.write(`${response}\r\n`);
-                if (fullCommand.startsWith("QUIT")) {
-                    socket.end()
+                const fullCommand = command.trim();
+                if (session.isDataMode) {
+                    if (fullCommand === ".") {
+                        saveMail(session);
+                        session.isDataMode = false;
+                        socket.write(`250 Message Accepted\r\n`);
+                        command="";
+                    }
+                    else {
+                        session.data = session.data + fullCommand + '\n';
+                        command="";
+                    }
+                }
+                else {
+                    const response = parseCommand(fullCommand, session);
+                    // console.log(response);
+                    socket.write(`${response}\r\n`);
+                    command = ""
+                    if (fullCommand.startsWith("QUIT")) {
+                        socket.end()
+                    }
                 }
             }
-            console.log(session);
+            // log(`Session updated: ${JSON.stringify(session)}`, "info")
             // log(command, "info");
         })
 

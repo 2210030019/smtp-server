@@ -1,0 +1,5 @@
+{
+  "from": "harshita@nodemail.local",
+  "to": "john@nodemail.local",
+  "data": "Subject: Hello John\nThis is my first email!\n"
+}
