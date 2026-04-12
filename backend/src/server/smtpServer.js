@@ -15,18 +15,24 @@ export const startServer = () => {
 
         socket.on('data', (data) => {
             command += data.toString();
+            console.log(command);
             if (command.includes("\r\n") || command.includes("\n")) {
                 const fullCommand = command.trim();
                 if (session.isDataMode) {
-                    if (fullCommand === ".") {
-                        saveMail(session);
-                        session.isDataMode = false;
-                        socket.write(`250 Message Accepted\r\n`);
-                        command="";
-                    }
-                    else {
-                        session.data = session.data + fullCommand + '\n';
-                        command="";
+                    const lines = fullCommand.split("\n");
+                    for (const line of lines) {
+                        const trimmedLine = line.trim();
+                        // console.log(`data is ${line}`);
+                        if (trimmedLine === ".") {
+                            saveMail(session);
+                            session.isDataMode = false;
+                            socket.write(`250 Message Accepted\r\n`);
+                            command = "";
+                        }
+                        else {
+                            session.data = session.data + trimmedLine + '\n';
+                            command = "";
+                        }
                     }
                 }
                 else {
