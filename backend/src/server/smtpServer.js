@@ -36,19 +36,21 @@ export const startServer = () => {
                             // console.log(session);
                             // console.log(signature);
                             if(!verifySign(session.from, session.to, session.data,signature)){
-                                log("Email rejected: Mismatch in the server lookup", "error");
+                                log("Email rejected: DKIM verification failed", "error");
+                                socket.write(`550 Message rejected: DKIM verification failed\r\n`);
                                 socket.end();
                                 return;
                             }
                             const spam= checkMail(session);
                             if(spam.isSpam){
                                 socket.write(`550 Message rejected: ${spam.reason}`);
-                                log("Spam Email", "info");
+                                log(`Spam email rejected: ${spam.reason}`, "error");
                                 socket.end();
                                 return;
                             }
                             saveMail(session);
                             session.isDataMode = false;
+                            log(`Email accepted: ${session.from} → ${session.to}`, "success");
                             socket.write(`250 Message Accepted\r\n`);
                             command = "";
                         }
