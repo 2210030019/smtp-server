@@ -1,6 +1,7 @@
 import { resolveMx } from "../services/mxLookup.js";
 import { log } from "../utils/logger.js";
 import net from "net";
+import { signEmail } from "../services/dkimSigner.js";
 
 export const sendMail = async (to, from, data) => {
     const domain = to.split("@")[1];
@@ -13,13 +14,14 @@ export const sendMail = async (to, from, data) => {
     let step = 0;
     socket.on('data', (chunk) => {
         const response = chunk.toString().trim();
-        console.log(response);
+        // console.log(response);
         if (step == 0 && response.startsWith("220")) {
             socket.write("EHLO nodemail.local\r\n");
             step = 1;
         }
         else if (step == 1 && response.startsWith("250")) {
-            socket.write(`MAIL FROM:<${from}>\r\n`);
+            const signature = signEmail(from, to, data);
+            socket.write(`${signature}\r\nMAIL FROM:<${from}>\r\n`);
             step = 2;
         }
         else if (step == 2 && response.startsWith("250")) {

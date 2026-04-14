@@ -5,6 +5,7 @@ import { createSession } from "../core/sessionManager.js";
 import { parseCommand } from "../core/commandParser.js";
 import { saveMail } from "../storage/mailStore.js";
 import { checkMail } from "../services/spamFilter.js";
+import { verifySign } from "../services/dkimSigner.js";
 
 export const startServer = () => {
     const server = net.createServer((socket) => {
@@ -13,10 +14,17 @@ export const startServer = () => {
 
         const session = createSession();
         let command = "";
+        let signature="";
 
         socket.on('data', (data) => {
             command += data.toString();
-            console.log(command);
+            if(command.startsWith("DKIM")){
+                const index=command.indexOf("MAIL");
+                signature=command.substring(16,index);
+                const result=command.slice(index);
+                command=result;
+            }
+            // console.log(command);
             if (command.includes("\r\n") || command.includes("\n")) {
                 const fullCommand = command.trim();
                 if (session.isDataMode) {
@@ -25,9 +33,17 @@ export const startServer = () => {
                         const trimmedLine = line.trim();
                         // console.log(`data is ${line}`);
                         if (trimmedLine === ".") {
+                            // console.log(session);
+                            // console.log(signature);
+                            if(!verifySign(session.from, session.to, session.data,signature)){
+                                log("Email rejected: Mismatch in the server lookup", "error");
+                                socket.end();
+                                return;
+                            }
                             const spam= checkMail(session);
                             if(spam.isSpam){
                                 socket.write(`550 Message rejected: ${spam.reason}`);
+                                log("Spam Email", "info");
                                 socket.end();
                                 return;
                             }

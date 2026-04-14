@@ -3,7 +3,7 @@ export const parseCommand = (command, session) =>{
         session.step="ehlo";
         return "250 Hello";
     }
-    else if(command.startsWith("MAIL FROM")){
+    else if(command.includes("MAIL FROM")){
         const mail = command.split("<")[1].split(">")[0];
         session.from = mail;
         session.step="mail_from";
