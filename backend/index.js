@@ -7,6 +7,6 @@ setTimeout(async () => {
     await sendMail(
         "john@nodemail.local",
         "harshita@nodemail.local",
-        "Subject: Test\r\n\r\nThis is a test email!"
+        "Subject: You won!\r\n\r\nCongratulations you won the competition!"
     )
 }, 2000)

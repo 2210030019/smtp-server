@@ -4,6 +4,7 @@ import { log } from "../utils/logger.js";
 import { createSession } from "../core/sessionManager.js";
 import { parseCommand } from "../core/commandParser.js";
 import { saveMail } from "../storage/mailStore.js";
+import { checkMail } from "../services/spamFilter.js";
 
 export const startServer = () => {
     const server = net.createServer((socket) => {
@@ -24,6 +25,12 @@ export const startServer = () => {
                         const trimmedLine = line.trim();
                         // console.log(`data is ${line}`);
                         if (trimmedLine === ".") {
+                            const spam= checkMail(session);
+                            if(spam.isSpam){
+                                socket.write(`550 Message rejected: ${spam.reason}`);
+                                socket.end();
+                                return;
+                            }
                             saveMail(session);
                             session.isDataMode = false;
                             socket.write(`250 Message Accepted\r\n`);
