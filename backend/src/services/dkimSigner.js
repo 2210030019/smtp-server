@@ -13,14 +13,14 @@ export const signEmail = (from, to, data)=>{
     sign.update(dataToSign);
     sign.end();
     const signature = sign.sign(privateKey, 'base64');
-    console.log("signEmail:" ,dataToSign);
+    // console.log("signEmail:" ,dataToSign);
     return `DKIM-Signature: ${signature}`;
 }
 
 export const verifySign = (from, to, data, signature)=>{
     const verify = crypto.createVerify('RSA-SHA256');
     const dataToSign= `from:${from}\nto:${to}\ndata:${data}`;
-    console.log("verifySign:" ,dataToSign);
+    // console.log("verifySign:" ,dataToSign);
     verify.update(dataToSign);
     verify.end();
     return verify.verify(publicKey, signature, 'base64');
