@@ -11,10 +11,11 @@ export const sendMail = async (to, from, data) => {
     //     return;
     // }
     const socket = net.createConnection(25, "localhost");
+    log(`Connecting to ${host} to deliver email to ${to}`, "info");
     let step = 0;
     socket.on('data', (chunk) => {
         const response = chunk.toString().trim();
-        // console.log(response);
+        log(`Server: ${response}`, "info");
         if (step == 0 && response.startsWith("220")) {
             socket.write("EHLO nodemail.local\r\n");
             step = 1;
@@ -41,6 +42,7 @@ export const sendMail = async (to, from, data) => {
             step = 6;
         }
         else if (step == 6 && response.startsWith("221")) {
+            log(`Email delivered to ${to}`, "success")
             socket.end();
         }
     });

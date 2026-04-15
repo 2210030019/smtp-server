@@ -11,38 +11,35 @@ export const startServer = () => {
     const server = net.createServer((socket) => {
 
         socket.write("220 mail.nodemail.local ESMTP Ready\r\n");
+        log(`New connection from ${socket.remoteAddress}`, "info");
 
         const session = createSession();
         let command = "";
-        let signature="";
+        let signature = "";
 
         socket.on('data', (data) => {
             command += data.toString();
-            if(command.startsWith("DKIM")){
-                const index=command.indexOf("MAIL");
-                signature=command.substring(16,index);
-                const result=command.slice(index);
-                command=result;
+            if (command.startsWith("DKIM")) {
+                const index = command.indexOf("MAIL");
+                signature = command.substring(16, index);
+                const result = command.slice(index);
+                command = result;
             }
-            // console.log(command);
             if (command.includes("\r\n") || command.includes("\n")) {
                 const fullCommand = command.trim();
                 if (session.isDataMode) {
                     const lines = fullCommand.split("\n");
                     for (const line of lines) {
                         const trimmedLine = line.trim();
-                        // console.log(`data is ${line}`);
                         if (trimmedLine === ".") {
-                            // console.log(session);
-                            // console.log(signature);
-                            if(!verifySign(session.from, session.to, session.data,signature)){
+                            if (!verifySign(session.from, session.to, session.data, signature)) {
                                 log("Email rejected: DKIM verification failed", "error");
                                 socket.write(`550 Message rejected: DKIM verification failed\r\n`);
                                 socket.end();
                                 return;
                             }
-                            const spam= checkMail(session);
-                            if(spam.isSpam){
+                            const spam = checkMail(session);
+                            if (spam.isSpam) {
                                 socket.write(`550 Message rejected: ${spam.reason}`);
                                 log(`Spam email rejected: ${spam.reason}`, "error");
                                 socket.end();
@@ -70,12 +67,13 @@ export const startServer = () => {
                     }
                 }
             }
-            // log(`Session updated: ${JSON.stringify(session)}`, "info")
-            // log(command, "info");
         })
 
         socket.on('error', (error) => {
             log(error, "error");
+        })
+        socket.on('close', () => {
+            log(`Connection closed from ${socket.remoteAddress}`, "info")
         })
     });
 
