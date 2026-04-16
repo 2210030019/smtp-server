@@ -52,6 +52,7 @@ Since this is a learning project, I used `nodemail.local` as a display name in t
 ```bash
 git clone https://github.com/2210030019/smtp-server.git
 cd smtp-server
+cd backend
 npm install
 ```
  
